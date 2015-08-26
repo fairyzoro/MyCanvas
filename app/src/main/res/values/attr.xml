@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="custom_style_roundImageView">
-        <attr name="custom_round" format="dimension" />
-        <attr name="custom_border" format="dimension" />
-        <attr name="custom_background" format="color" />
+    <declare-styleable name="custom_RoundImageview">
+
+        <!--定义图形的类型,circle表示图形只是有圆角;round表示图形是圆形-->
+        <attr name="mType" format="dimension">
+            <enum name="custom_circle" value="0" />
+            <enum name="custom_round" value="1" />
+        </attr>
+
+        <attr name="mRound" format="dimension" />
+
     </declare-styleable>
+
 
 </resources>

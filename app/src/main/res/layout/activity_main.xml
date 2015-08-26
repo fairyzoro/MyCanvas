@@ -8,6 +8,8 @@
     <com.mycanvas.view.MyRoundImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:custom_round="20dp" />
+        android:src="@mipmap/evaluate_face_l0"
+        app:mRound="20dp"
+        app:mType="custom_round" />
 
 </LinearLayout>

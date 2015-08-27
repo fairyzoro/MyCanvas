@@ -13,6 +13,7 @@ import android.graphics.Xfermode;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.ImageView;
 
 import com.mycanvas.R;
@@ -30,10 +31,10 @@ public class MyRoundImageView extends ImageView {
     private static final int TYPE_ROUND = 1;
 
     private Paint mPaint;
-    private Bitmap mBitmap;
+    private Bitmap mMaskBitmap;
     private Xfermode mXfermode = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
 
-    private WeakReference<Bitmap> mBitmapWeakRef;
+    private WeakReference<Bitmap> mWeakBitmap;
 
     private static final int BODER_RADIUS_DEFAULT = 10;
     private int mRound = BODER_RADIUS_DEFAULT;
@@ -42,7 +43,7 @@ public class MyRoundImageView extends ImageView {
         this(context, null);
 
         mPaint = new Paint();
-        mPaint.setAntiAlias(true);
+        mPaint.setAntiAlias(true);  // 防止边缘出现锯齿
     }
 
     public MyRoundImageView(Context context, AttributeSet attrs) {
@@ -55,7 +56,12 @@ public class MyRoundImageView extends ImageView {
 
         mType = typedArray.getInt(R.styleable.custom_RoundImageview_mType, TYPE_CIRCLE);
 
-        mRound = typedArray.getDimensionPixelSize(R.styleable.custom_RoundImageview_mRound, BODER_RADIUS_DEFAULT);
+        mRound = typedArray.getDimensionPixelSize(R.styleable.custom_RoundImageview_mRound, (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                        BODER_RADIUS_DEFAULT, getResources()
+                                .getDisplayMetrics()));
+
+        //Log.e("ljw", "mType=" + mType + " , mRound=" + mRound);
 
         typedArray.recycle();
     }
@@ -63,47 +69,54 @@ public class MyRoundImageView extends ImageView {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Bitmap bitmap = null;
+        Bitmap bitmap = mWeakBitmap == null ? null : mWeakBitmap.get();
 
-        if (mBitmapWeakRef != null)
-            bitmap = mBitmapWeakRef.get();
+        Log.e("ljw", "3333~~~~Width=" + getWidth() + " , Height=" + getHeight());
+
 
         if (bitmap == null || bitmap.isRecycled()) {
+
             Drawable drawable = getDrawable();
 
             if (drawable != null) {
+                bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas drawCanvas = new Canvas(bitmap);
+
                 // 获取图片资源的实际宽度和高度,而getWidth()和getHeight()是获取ImageView组件的宽高
                 int dWidth = drawable.getIntrinsicWidth();
                 int dHeight = drawable.getIntrinsicHeight();
 
                 // 设置图形的缩放比例
                 float scale = 1.0f;
-                if (mType == TYPE_ROUND)
+                if (mType == TYPE_ROUND) {
                     scale = Math.max(getWidth() * 1.0f / dWidth, getHeight() * 1.0f / dHeight);
-                else
+                } else
                     scale = getWidth() * 1.0f / Math.min(dWidth, dHeight);
 
-                drawable.setBounds(0, 0, (int) scale * dWidth, (int) scale * dHeight);
+                drawable.setBounds(0, 0, (int) scale * getWidth(), (int) scale * getHeight());
+                drawable.draw(drawCanvas);
 
-                bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
-                Canvas drawCanvas = new Canvas(bitmap);
-
-                if (mBitmap == null || mBitmap.isRecycled()) {
-                    mBitmap = getBitmap();
+                if (mMaskBitmap == null || mMaskBitmap.isRecycled()) {
+                    mMaskBitmap = getBitmap();
                 }
 
                 mPaint.reset();
                 mPaint.setFilterBitmap(false);
                 mPaint.setXfermode(mXfermode);
 
-                drawCanvas.drawBitmap(bitmap, 0, 0, mPaint);
+                drawCanvas.drawBitmap(mMaskBitmap, 0, 0, mPaint);
 
                 mPaint.setXfermode(null);
 
                 canvas.drawBitmap(bitmap, 0, 0, null);
 
-                mBitmapWeakRef = new WeakReference<>(bitmap);
+                mWeakBitmap = new WeakReference<>(bitmap);
             }
+        }
+
+        if (bitmap != null) {
+            mPaint.setXfermode(null);
+            canvas.drawBitmap(bitmap, 0, 0, mPaint);
         }
     }
 
@@ -117,38 +130,37 @@ public class MyRoundImageView extends ImageView {
 
         if (mType == TYPE_ROUND) {
             canvas.drawRoundRect(new RectF(0, 0, getWidth(), getHeight()), mRound, mRound, paint);
-            return bitmap;
         }
 
         if (mType == TYPE_CIRCLE) {
-            canvas.drawCircle(getWidth() / 2, getHeight() / 2, getWidth() / 2, paint);
-            return bitmap;
+            canvas.drawCircle(getWidth() / 2, getWidth() / 2, getWidth() / 2, paint);
         }
 
-        Log.e("ljw", "******************************");
-
-        return null;
+        return bitmap;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+        Log.e("ljw", "1111~~~~Width=" + getWidth() + " , Height=" + getHeight());
         // 当需要绘制的形状是圆形时,将图形转换成正方形
         if (mType == TYPE_ROUND) {
             int width = widthMeasureSpec <= heightMeasureSpec ? widthMeasureSpec : heightMeasureSpec;
+            Log.e("ljw", "hahah  w=" + width);
             setMeasuredDimension(width, width);
         }
+        Log.e("ljw", "2222~~~~Width=" + getWidth() + " , Height=" + getHeight());
     }
 
     @Override
     public void invalidate() {
 
-        mBitmapWeakRef = null;
+        mWeakBitmap = null;
 
-        if (mBitmap != null) {
-            mBitmap.recycle();
-            mBitmap = null;
+        if (mMaskBitmap != null) {
+            mMaskBitmap.recycle();
+            mMaskBitmap = null;
         }
 
         super.invalidate();

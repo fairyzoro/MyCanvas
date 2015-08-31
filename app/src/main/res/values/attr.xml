@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="custom_RoundImageview">
+    <declare-styleable name="MyRoundImageView">
 
-        <!--定义图形的类型,circle表示图形只是有圆角;round表示图形是圆形-->
-        <attr name="mType" format="dimension">
-            <enum name="custom_circle" value="0" />
-            <enum name="custom_round" value="1" />
+        <attr name="imageType">
+            <enum name="type_fillet" value="0" />
+            <enum name="type_round" value="1" />
+            <enum name="type_ellipse" value="2" />
         </attr>
-
-        <attr name="mRound" format="dimension" />
+        <attr name="imageRadius" format="dimension" />
 
     </declare-styleable>
 
